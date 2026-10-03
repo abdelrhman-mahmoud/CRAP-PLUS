@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Anchor, ArrowLeft, ArrowUp, BadgePercent, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Expand, Fish, Menu, MessageCircle, Phone, Plus, Save, Search, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Trash2, Utensils, X, Leaf, Star, Heart, Upload, ImageOff } from 'lucide-react'
-import { getSiteData, adminRequest, cacheSiteData, uploadAdminImage } from './api'
+import { API_BASE, getSiteData, adminRequest, cacheSiteData, uploadAdminImage } from './api'
 import { seedData } from './data'
 import { ui, categoryName, itemName, itemDescription } from './i18n'
 
@@ -190,7 +190,7 @@ function Admin({ data, setData }) {
   const [uploadingOffer,setUploadingOffer] = useState(null)
   const [localMode,setLocalMode] = useState(false)
   const save = async (next) => { setData(next); cacheSiteData(next); try { if(!localMode){ await adminRequest('/admin/data', token, {method:'PUT',body:JSON.stringify(next)}) } setNotice('تم حفظ التغييرات بنجاح') } catch(err) { setNotice(err.message) } setTimeout(()=>setNotice(''),3500) }
-  const login = async e => { e.preventDefault(); setBusy(true); try { const r=await fetch(`${import.meta.env.VITE_API_URL||''}/api/admin/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})}); if(!r.ok) throw new Error('كلمة المرور غير صحيحة أو الخادم غير متصل'); const d=await r.json(); sessionStorage.setItem('cp-admin-token',d.token);setToken(d.token);setLocalMode(false) } catch(err) { setNotice(err.message); } finally {setBusy(false)} }
+  const login = async e => { e.preventDefault(); setBusy(true); try { const r=await fetch(`${API_BASE}/api/admin/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})}); if(!r.ok) throw new Error('كلمة المرور غير صحيحة أو الخادم غير متصل'); const d=await r.json(); sessionStorage.setItem('cp-admin-token',d.token);setToken(d.token);setLocalMode(false) } catch(err) { setNotice(err.message); } finally {setBusy(false)} }
   const beginItem = item => {
     const images=Array.isArray(item?.images)&&item.images.length?item.images:(item?.image?[item.image]:[])
     setEditing(item?.id || 'new')

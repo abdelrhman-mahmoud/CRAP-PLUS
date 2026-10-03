@@ -1,4 +1,4 @@
-const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const localKey = 'crab-plus-site-data'
 
 function stripMockImages(data) {
@@ -8,7 +8,7 @@ function stripMockImages(data) {
 
 export async function getSiteData() {
   try {
-    const response = await fetch(`${API}/api/public`)
+    const response = await fetch(`${API_BASE}/api/public`)
     if (!response.ok) throw new Error('API unavailable')
     return await response.json()
   } catch {
@@ -20,7 +20,7 @@ export async function getSiteData() {
 }
 
 export async function adminRequest(path, token, options = {}) {
-  const response = await fetch(`${API}/api${path}`, {
+  const response = await fetch(`${API_BASE}/api${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...options.headers },
   })
@@ -32,7 +32,7 @@ export async function adminRequest(path, token, options = {}) {
 }
 
 export async function uploadAdminImage(file, token) {
-  const response = await fetch(`${API}/api/admin/images`, {
+  const response = await fetch(`${API_BASE}/api/admin/images`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -46,7 +46,7 @@ export async function uploadAdminImage(file, token) {
     throw new Error(body.detail || 'تعذر رفع الصورة')
   }
   const result = await response.json()
-  return { ...result, url: `${API}${result.url}` }
+  return { ...result, url: `${API_BASE}${result.url}` }
 }
 
 export function cacheSiteData(data) { localStorage.setItem(localKey, JSON.stringify(data)) }

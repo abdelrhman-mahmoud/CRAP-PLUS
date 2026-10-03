@@ -14,20 +14,27 @@ Without MongoDB, the public API serves the starter menu. Admin sign-in and savin
 
 ## Deploy to Vercel
 
-Import this repository as a Vercel project with the repository root as its project root. The included `vercel.json` builds the frontend from `frontend/` and deploys the FastAPI function from the root `api/` directory. Add these Environment Variables in Vercel before deploying:
+Import this repository with the repository root as the project root, then select **Services** as the project framework. The root `vercel.json` configures two services in the same deployment:
 
-- `MONGODB_HOST`, `MONGODB_USERNAME`, and `MONGODB_PASSWORD`: Atlas cluster hostname, database user, and password. The API builds and URL-encodes the connection URI from them. Alternatively, set `MONGODB_URI` to the full Atlas connection string.
+- `frontend` serves the Vite site on `/` and handles `/admin`.
+- `app` runs `backend.app:app`; public requests under `/api/*` route to this FastAPI service.
+
+The browser calls the API on the same domain, so leave `VITE_API_URL` unset in Vercel. No service binding is needed: the frontend calls the public `/api/*` route from the browser, and the backend does not call another Vercel service.
+
+Add these Environment Variables in Vercel for Production and Preview:
+
+- `MONGODB_URI`: the Atlas connection string. Alternatively, set `MONGODB_HOST`, `MONGODB_USERNAME`, and `MONGODB_PASSWORD` instead.
 - `MONGODB_DB`: database name, for example `crab_plus`.
 - `ADMIN_PASSWORD`: a strong password for `/admin`.
 - `ADMIN_SECRET`: a separate random signing secret for admin sessions.
-- `CORS_ORIGINS`: only needed if the API is hosted on another origin; include the exact frontend origin.
+- `CORS_ORIGINS`: only needed if a different site origin will call the API; same-domain requests do not need it.
 
-The database stores the whole editable site document in the `site_data` collection. The initial menu includes entries transcribed from the provided PDF plus the new items. Calories not listed in the supplied prices are left blank so they can be entered by the restaurant. Prices are shown in Saudi riyals to match the menu PDF and design reference.
+Do not put the MongoDB URI or admin secrets in frontend variables such as `VITE_*`.
 
-Item and offer images uploaded from the admin panel are stored persistently in MongoDB GridFS (`menu_images` bucket). Uploads accept JPG, PNG, WEBP, and GIF files up to 4 MB; the API returns a public image URL used by the menu. The 4 MB limit keeps uploads below Vercel Functions' 4.5 MB request and response payload limit.
+The database stores the editable site document in the `site_data` collection. Item and offer uploads are stored in MongoDB GridFS (`menu_images` bucket), and unused uploads are pruned after saves or when an unfinished image edit is canceled. Uploads accept JPG, PNG, WEBP, and GIF files up to 4 MB.
 
 ## Admin
 
-Open `/admin`, sign in with `ADMIN_PASSWORD`, then manage menu items, item availability, prices, calories, image URLs, categories and their order, offers, contact details, map link, opening hours, and social links. Item order is controlled with the up/down controls. Images can be replaced with a direct image URL; uploaded storage can be added later by connecting a media provider such as Cloudinary.
+Open `/admin`, sign in with `ADMIN_PASSWORD`, then manage menu items, item availability, prices, calories, image URLs, categories and their order, offers, contact details, map link, opening hours, and social links. Item order is controlled with the up/down controls. Images can be uploaded directly from a device or replaced with a direct image URL.
 
 The contact and map details beyond the supplied phone number are starter text from the design reference and should be replaced with the restaurant's final information.
