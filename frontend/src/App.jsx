@@ -8,6 +8,7 @@ const normalize = (n) => String(n || '').replace(/\s/g, '')
 
 function Brand({ small = false }) { return <a className={`brand ${small?'brand-small':''}`} href="/"><img src="/images/logo.png" alt="Crab Plus"/></a> }
 function SocialLogo({ name }) { return <img className={`social-logo social-${name}`} src={`/images/social/${name}.svg`} alt="" aria-hidden="true"/> }
+function offerPhotos(offer) { return [...new Set([offer?.image || offer?.image_url, ...(Array.isArray(offer?.images) ? offer.images : [])].filter(url => typeof url === 'string' && url.trim()))] }
 
 function PublicSite({ data, language, setLanguage }) {
   const [selected, setSelected] = useState(null)
@@ -18,6 +19,7 @@ function PublicSite({ data, language, setLanguage }) {
   const [activeSection, setActiveSection] = useState('home')
   const [detailItem, setDetailItem] = useState(null)
   const [activePhoto, setActivePhoto] = useState(0)
+  const [activeOfferPhoto, setActiveOfferPhoto] = useState(0)
   const text = ui[language] || ui.ar
   const { categories = [], items = [], offers = [], settings = seedData.settings } = data
   const orderedCategories = [...categories].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))
@@ -52,7 +54,9 @@ function PublicSite({ data, language, setLanguage }) {
   const dishImage = (item,index) => dishImages(item,index)[0] || ''
   const showDetails = item => { setDetailItem(item);setActivePhoto(0) }
   const shiftPhoto = amount => setActivePhoto(current=>(current+amount+detailPhotos.length)%detailPhotos.length)
-  const offerImage = offer => offer?.image || offer?.image_url || ''
+  const offerImage = offer => offerPhotos(offer)[0] || ''
+  const firstOfferPhotos = offerPhotos(offers[0])
+  const currentOfferPhoto = firstOfferPhotos[activeOfferPhoto % Math.max(firstOfferPhotos.length, 1)]
   const renderDish = (item,index,compact=false) => {
     const description=itemDescription(item,language)
     return <article className="card" key={item.id}>
@@ -128,9 +132,9 @@ function PublicSite({ data, language, setLanguage }) {
       <div className="w rv"><div className="off"><div>
         <h2>{offers.length?(language==='en'?(offers[0].title_en||offers[0].title):(offers[0].title||offers[0].title_en)):text.offerTitle}</h2>
         <p>{offers.length?(language==='en'?(offers[0].description_en||offers[0].description):(offers[0].description||offers[0].description_en)):text.offerFallback}{offers[0]?.price?` · ${offers[0].price} ${text.currency}`:''}</p>
-        {offers.slice(1).map((offer,index)=><div className="offer-extra" key={offer.id||index}><img src={offerImage(offer)} alt="" loading="lazy"/><div><b>{language==='en'?(offer.title_en||offer.title):(offer.title||offer.title_en)}</b><span>{language==='en'?(offer.description_en||offer.description):(offer.description||offer.description_en)}{offer.price?` · ${offer.price} ${text.currency}`:''}</span></div></div>)}
+        {offers.slice(1).map((offer,index)=><div className="offer-extra" key={offer.id||index}>{offerImage(offer)&&<img src={offerImage(offer)} alt="" loading="lazy"/>}<div><b>{language==='en'?(offer.title_en||offer.title):(offer.title||offer.title_en)}</b><span>{language==='en'?(offer.description_en||offer.description):(offer.description||offer.description_en)}{offer.price?` · ${offer.price} ${text.currency}`:''}</span></div></div>)}
         <a className="cta" href="#menu">{text.showOffers}</a>
-      </div><div className="ph" role="img" aria-label={text.offerTitle} style={offers[0]?.image||offers[0]?.image_url?{backgroundImage:`url("${offerImage(offers[0])}")`}:undefined}/></div></div>
+      </div><div className="ph offer-gallery" aria-label={text.offerTitle}>{currentOfferPhoto?<img src={currentOfferPhoto} alt={offers[0]?.title||text.offerTitle} loading="lazy"/>:<span className="no-photo-label"><ImageOff/><small>{language==='en'?'Offer photos will appear here':'صور العرض هتظهر هنا'}</small></span>}{firstOfferPhotos.length>1&&<><button className="offer-photo-arrow previous" type="button" onClick={()=>setActiveOfferPhoto(i=>(i-1+firstOfferPhotos.length)%firstOfferPhotos.length)} aria-label={language==='en'?'Previous offer photo':'الصورة السابقة'}>{language==='en'?<ChevronLeft/>:<ChevronRight/>}</button><button className="offer-photo-arrow next" type="button" onClick={()=>setActiveOfferPhoto(i=>(i+1)%firstOfferPhotos.length)} aria-label={language==='en'?'Next offer photo':'الصورة التالية'}>{language==='en'?<ChevronRight/>:<ChevronLeft/>}</button><span className="offer-photo-count">{activeOfferPhoto%firstOfferPhotos.length+1} / {firstOfferPhotos.length}</span></>}</div></div></div>
     </section>
     <section className="sec" id="menu">
       <div className="w rv"><h2 className="st"><i>≋</i>{text.menuTitle} 🦀<i>≋</i></h2>
@@ -214,12 +218,12 @@ function Admin({ data, setData }) {
     catch(error) { setNotice(error.message) }
     finally { setUploadingImage(null) }
   }
-  const uploadOfferImage = async (index,file) => {
-    if(!file)return
+  const uploadOfferImages = async (index,files) => {
+    if(!files?.length)return
     setUploadingOffer(index)
     try {
-      const result=await uploadAdminImage(file,token)
-      const offers=data.offers.map((offer,i)=>i===index?{...offer,image:result.url,image_url:undefined}:offer)
+      const uploaded=await Promise.all([...files].map(file=>uploadAdminImage(file,token)))
+      const offers=data.offers.map((offer,i)=>i===index?{...offer,images:[...(offer.images||[]),...uploaded.map(image=>image.url)],image:offer.image||offer.image_url||uploaded[0].url,image_url:undefined}:offer)
       await save({...data,offers})
     } catch(error) { setNotice(error.message) }
     finally { setUploadingOffer(null) }
@@ -237,7 +241,7 @@ function Admin({ data, setData }) {
   return <div className="admin-shell"><header className="admin-top"><Brand small/><span className="admin-label"><ShieldCheck size={17}/> لوحة إدارة كراب بلس</span><a href="/" className="back-home">عرض الموقع <ArrowLeft size={16}/></a></header><div className="admin-layout"><aside className="admin-sidebar"><span className="admin-greeting">أهلاً بك في الإدارة</span><button className={tab==='items'?'selected':''} onClick={()=>navigateTab('items')}><Utensils/> إدارة الأصناف</button><button className={tab==='categories'?'selected':''} onClick={()=>navigateTab('categories')}><Menu/> الأقسام والترتيب</button><button className={tab==='offers'?'selected':''} onClick={()=>navigateTab('offers')}><BadgePercent/> العروض الخاصة</button><button className={tab==='settings'?'selected':''} onClick={()=>navigateTab('settings')}><Settings/> بيانات التواصل</button><div className="sidebar-bottom"><span className="live-dot"/> الموقع جاهز للتعديل</div></aside><main className="admin-content"><div className="admin-page-head"><div><span className="kicker">مساحة التحكم</span><h1>{tab==='items'?'إدارة المنيو':tab==='categories'?'الأقسام والترتيب':tab==='offers'?'العروض الخاصة':'بيانات التواصل'}</h1><p>{tab==='items'?'أضف الأصناف أو عدلها ورتب ظهورها في المنيو.':tab==='categories'?'أضف الأقسام ورتب ظهورها في قائمة الطعام.':tab==='offers'?'حدّث العروض التي تظهر لزوار الموقع.':'أرقام التواصل والعنوان وحسابات التواصل الاجتماعي.'}</p></div>{tab==='items'&&<button className="button orange" onClick={()=>beginItem(null)}><Plus size={17}/> إضافة صنف</button>}</div>{notice&&<div className="notice"><Check size={17}/>{notice}</div>}
       {tab==='items'&&<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>الصنف</th><th>القسم</th><th>السعر</th><th>السعرات</th><th>الظهور</th><th>ترتيب</th><th></th></tr></thead><tbody>{[...data.items].sort((a,b)=>a.sort_order-b.sort_order).map((item,i)=><tr key={item.id}><td><div className="table-item">{(item.images?.[0]||item.image)?<img src={item.images?.[0]||item.image} alt=""/>:<span className="table-no-photo"><ImageOff/></span>}<b>{item.name}</b></div></td><td>{item.category}</td><td>{item.price} ر.س</td><td>{item.calories||'—'}</td><td><button className={item.available===false?'visibility off':'visibility'} onClick={()=>save({...data,items:data.items.map(x=>x.id===item.id?{...x,available:x.available===false}:x)})}>{item.available===false?'مخفي':'ظاهر'}</button></td><td><div className="reorder"><button onClick={()=>shift(i,-1)} aria-label="للأعلى"><ArrowUp/></button><button onClick={()=>shift(i,1)} aria-label="للأسفل"><ArrowUp className="down"/></button></div></td><td><div className="row-actions"><button onClick={()=>beginItem(item)} aria-label="تعديل"><Settings/></button><button className="delete" onClick={()=>delItem(item)} aria-label="حذف"><Trash2/></button></div></td></tr>)}</tbody></table></div>}
       {tab==='categories'&&<CategoryManager categories={data.categories} items={data.items} onSave={(categories,items=data.items)=>save({...data,categories,items})}/>}
-      {tab==='offers'&&<div className="admin-form-card"><h2>العروض الحالية</h2>{data.offers.map((offer,i)=><div className="offer-row" key={offer.id||i}>{(offer.image||offer.image_url)&&<img className="offer-admin-image" src={offer.image||offer.image_url} alt=""/>}<div><b>{offer.title}</b>{offer.title_en&&<small dir="ltr">{offer.title_en}</small>}<p>{offer.description}</p>{offer.description_en&&<small dir="ltr">{offer.description_en}</small>}</div><label className="image-upload offer-image-upload"><Upload size={14}/>{uploadingOffer===i?'جاري الرفع...':'تغيير الصورة'}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingOffer!==null} onChange={e=>{const file=e.target.files?.[0];e.target.value='';uploadOfferImage(i,file)}}/></label><button className="delete" onClick={()=>save({...data,offers:data.offers.filter((_,n)=>n!==i)})} aria-label="حذف العرض"><Trash2/></button></div>)}<OfferForm token={token} onAdd={offer=>save({...data,offers:[...data.offers,{...offer,id:`offer-${Date.now()}`}]})}/></div>}
+      {tab==='offers'&&<div className="admin-form-card"><h2>العروض الحالية</h2>{data.offers.map((offer,i)=><div className="offer-row" key={offer.id||i}><div className="offer-admin-photos">{offerPhotos(offer).map((image,n)=><img className="offer-admin-image" src={image} alt={`صورة ${n+1} للعرض`} key={`${image}-${n}`}/>)}</div><div><b>{offer.title}</b>{offer.title_en&&<small dir="ltr">{offer.title_en}</small>}<p>{offer.description}</p>{offer.description_en&&<small dir="ltr">{offer.description_en}</small>}</div><label className="image-upload offer-image-upload"><Upload size={14}/>{uploadingOffer===i?'جاري الرفع...':'إضافة صور الأصناف'}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingOffer!==null} onChange={e=>{const files=e.target.files;e.target.value='';uploadOfferImages(i,files)}}/></label><button className="delete" onClick={()=>save({...data,offers:data.offers.filter((_,n)=>n!==i)})} aria-label="حذف العرض"><Trash2/></button></div>)}<OfferForm token={token} onAdd={offer=>save({...data,offers:[...data.offers,{...offer,id:`offer-${Date.now()}`}]})}/></div>}
       {tab==='settings'&&<SettingsForm settings={data.settings} onSave={settings=>save({...data,settings})}/>}
       </main></div>
       {editing&&<div className="modal-backdrop" onClick={closeItemEditor}><form className="item-modal" onSubmit={saveItem} onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="kicker">تفاصيل المنيو</span><h2>{editing==='new'?'إضافة صنف جديد':'تعديل الصنف'}</h2></div><button type="button" className="icon-btn" onClick={closeItemEditor}><X/></button></div><div className="modal-fields"><label>اسم الصنف بالعربي<input required value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label><label>اسم الصنف بالإنجليزي<input value={draft.name_en||''} dir="ltr" onChange={e=>setDraft({...draft,name_en:e.target.value})}/></label><label>القسم<select value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}>{data.categories.map(c=><option key={c.id}>{c.name}</option>)}</select></label><label>السعر (ر.س)<input type="number" min="0" required value={draft.price} onChange={e=>setDraft({...draft,price:Number(e.target.value)})}/></label><label>السعرات الحرارية<input type="number" min="0" value={draft.calories||''} placeholder="اختياري" onChange={e=>setDraft({...draft,calories:e.target.value?Number(e.target.value):null})}/></label><label>وصف بالعربي<input value={draft.description||''} onChange={e=>setDraft({...draft,description:e.target.value})} placeholder="مكونات أو تفاصيل الطبق"/></label><label>وصف بالإنجليزي<input dir="ltr" value={draft.description_en||''} onChange={e=>setDraft({...draft,description_en:e.target.value})}/></label><label className="span-two">وصف تفصيلي بالعربي<textarea rows="4" value={draft.long_description||''} onChange={e=>setDraft({...draft,long_description:e.target.value})}/></label><label className="span-two">Detailed description in English<textarea dir="ltr" rows="4" value={draft.long_description_en||''} onChange={e=>setDraft({...draft,long_description_en:e.target.value})}/></label><div className="span-two admin-images-field"><div className="admin-images-heading"><b>صور الصنف</b><button type="button" className="button outline" onClick={()=>setDraft(current=>({...current,images:[...current.images,'']}))}><Plus size={15}/> إضافة صورة</button></div>{draft.images.map((image,index)=><div className="admin-image-row" key={index}>{image?<img src={image} alt=""/>:<span className="admin-no-photo"><ImageOff/></span>}<div className="image-source"><input type="text" inputMode="url" dir="ltr" value={image} onChange={e=>setDraftImage(index,e.target.value)} placeholder="رابط صورة (اختياري)"/><label className="image-upload"><Upload size={15}/>{uploadingImage===index?'جاري الرفع...':'رفع من الجهاز'}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingImage!==null} onChange={e=>{const file=e.target.files?.[0];e.target.value='';uploadDraftImage(index,file)}}/></label></div><div className="reorder"><button type="button" onClick={()=>moveDraftImage(index,-1)} aria-label="تحريك الصورة للأعلى"><ArrowUp/></button><button type="button" onClick={()=>moveDraftImage(index,1)} aria-label="تحريك الصورة للأسفل"><ArrowUp className="down"/></button></div><button type="button" className="delete" onClick={()=>removeDraftImage(index)} aria-label="حذف الصورة"><Trash2/></button></div>)}<small className="image-help">ارفع صورة من جهازك أو أضف رابطًا. الحد الأقصى 4 ميجابايت للصورة.</small></div><div className="check-row"><label><input type="checkbox" checked={draft.available!==false} onChange={e=>setDraft({...draft,available:e.target.checked})}/> متاح في المنيو</label><label><input type="checkbox" checked={!!draft.featured} onChange={e=>setDraft({...draft,featured:e.target.checked})}/> طبق مميز</label></div></div><div className="modal-actions"><button type="button" className="button outline" onClick={closeItemEditor}>إلغاء</button><button className="button teal-button" disabled={uploadingImage!==null}><Save size={17}/> حفظ الصنف</button></div></form></div>}
@@ -288,27 +292,31 @@ function CategoryManager({categories,items,onSave}) {
 }
 
 function OfferForm({onAdd,token}) {
-  const [form,setForm]=useState({title:'',title_en:'',description:'',description_en:'',price:'',image:''})
+  const [form,setForm]=useState({title:'',title_en:'',description:'',description_en:'',price:'',image:'',images:[]})
   const [uploading,setUploading]=useState(false)
   const [uploadError,setUploadError]=useState('')
-  const uploadImage=async file=>{
-    if(!file)return
+  const uploadImages=async files=>{
+    if(!files?.length)return
     setUploading(true);setUploadError('')
-    try { const result=await uploadAdminImage(file,token);setForm(current=>({...current,image:result.url})) }
-    catch(error) { setUploadError(error.message) }
+    try {
+      const uploaded=await Promise.all([...files].map(file=>uploadAdminImage(file,token)))
+      setForm(current=>{const images=[...current.images,...uploaded.map(result=>result.url)];return {...current,images,image:current.image||images[0]||''}})
+    } catch(error) { setUploadError(error.message) }
     finally { setUploading(false) }
   }
-  return <form className="offer-form" onSubmit={e=>{e.preventDefault();onAdd({...form,price:form.price?Number(form.price):null});setForm({title:'',title_en:'',description:'',description_en:'',price:'',image:''})}}>
+  const removeImage=index=>setForm(current=>{const images=current.images.filter((_,i)=>i!==index);return {...current,images,image:current.images[index]===current.image?(images[0]||''):current.image}})
+  const submit=event=>{event.preventDefault();const images=form.images.filter(Boolean);onAdd({...form,price:form.price?Number(form.price):null,image:form.image||images[0]||'',images});setForm({title:'',title_en:'',description:'',description_en:'',price:'',image:'',images:[]})}
+  return <form className="offer-form" onSubmit={submit}>
     <h3>إضافة عرض</h3>
     <label>عنوان العرض بالعربي<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label>
     <label>Offer title<input dir="ltr" value={form.title_en} onChange={e=>setForm({...form,title_en:e.target.value})}/></label>
     <label>وصف العرض<input required value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label>
     <label>Offer description<input dir="ltr" value={form.description_en} onChange={e=>setForm({...form,description_en:e.target.value})}/></label>
     <label>السعر (اختياري)<input type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label>
-    <div className="span-two image-field"><span>صورة العرض</span><div className="image-source"><input type="text" inputMode="url" dir="ltr" value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="رابط اختياري للصورة"/><label className="image-upload"><Upload size={16}/>{uploading?'جاري الرفع...':'رفع صورة من الجهاز'}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{const file=e.target.files?.[0];e.target.value='';uploadImage(file)}}/></label></div></div>
+    <div className="span-two image-field"><span>الصورة الرئيسية للعرض</span><div className="image-source"><input type="text" inputMode="url" dir="ltr" value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="رابط اختياري للصورة"/><label className="image-upload"><Upload size={16}/>{uploading?'جاري الرفع...':'رفع صورة من الجهاز'}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{const file=e.target.files?.[0];e.target.value='';uploadImages(file?[file]:[])}}/></label></div></div>
+    <div className="span-two image-field"><span>صور الأصناف داخل العرض (يمكن اختيار أكثر من صورة)</span><label className="image-upload offer-multiple-upload"><Upload size={16}/>{uploading?'جاري رفع الصور...':'اختيار صور الأصناف'}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploading} onChange={e=>{const files=e.target.files;e.target.value='';uploadImages(files)}}/></label>{form.images.length>0&&<div className="offer-draft-photos">{form.images.map((image,index)=><div key={`${image}-${index}`}><img src={image} alt={`صورة الصنف ${index+1}`}/><button type="button" onClick={()=>removeImage(index)} aria-label="إزالة الصورة"><X size={14}/></button></div>)}</div>}</div>
     {uploadError&&<small className="upload-error span-two">{uploadError}</small>}
-    {form.image&&<img className="offer-form-preview" src={form.image} alt="معاينة صورة العرض"/>}
-    <button className="button orange"><Plus size={16}/> إضافة العرض</button>
+    <button className="button orange" disabled={uploading}><Plus size={16}/> إضافة العرض</button>
   </form>
 }
 

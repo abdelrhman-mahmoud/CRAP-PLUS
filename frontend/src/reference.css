@@ -447,3 +447,20 @@
 .admin-no-photo{width:58px;height:50px}
 .public-site .map-pair{grid-template-columns:1fr}
 .public-site .ab{grid-template-columns:1fr}
+
+/* Offer gallery: a single offer can show its main image and several included dishes. */
+.public-site .offer-gallery{position:relative;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#078d91,#0a5155)}
+.public-site .offer-gallery>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.public-site .offer-gallery::after{z-index:1;pointer-events:none}
+.public-site .offer-photo-arrow{position:absolute;z-index:2;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#087e84;box-shadow:0 2px 10px #0003;font-size:21px}
+.public-site .offer-photo-arrow.previous{left:12px}
+.public-site .offer-photo-arrow.next{right:12px}
+.public-site .offer-photo-count{position:absolute;z-index:2;bottom:10px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:20px;background:#0b353bcc;color:#fff;font-size:11px;font-weight:700;direction:ltr}
+.offer-admin-photos{display:flex;gap:5px;overflow-x:auto;flex:none!important}
+.offer-admin-image{width:52px;height:48px;border:1px solid #e7e9e2}
+.offer-draft-photos{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.offer-draft-photos>div{position:relative;width:82px;height:72px}
+.offer-draft-photos img{width:100%;height:100%;object-fit:cover;border-radius:7px}
+.offer-draft-photos button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#a44;box-shadow:0 1px 4px #0003}
+.offer-multiple-upload{width:max-content;min-height:36px}
+@media(max-width:650px){.public-site .offer-photo-arrow{width:31px;height:31px;font-size:17px}.public-site .offer-photo-arrow.previous{left:7px}.public-site .offer-photo-arrow.next{right:7px}.offer-admin-image{width:42px;height:42px}.offer-row{flex-wrap:wrap}.offer-admin-photos{order:0}.offer-row>div:not(.offer-admin-photos){order:1;flex-basis:calc(100% - 10px)}.offer-row .offer-image-upload{order:2}.offer-row>.delete{order:3}}

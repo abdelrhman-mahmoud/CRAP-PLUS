@@ -67,7 +67,7 @@ def _referenced_image_ids(data: dict[str, Any]) -> set[ObjectId]:
     for item in data.get("items", []):
         values.extend([item.get("image"), *(item.get("images") or [])])
     for offer in data.get("offers", []):
-        values.extend([offer.get("image"), offer.get("image_url")])
+        values.extend([offer.get("image"), offer.get("image_url"), *(offer.get("images") or [])])
     for value in values:
         if isinstance(value, str):
             match = re.search(r"/api/images/([a-fA-F0-9]{24})(?:$|[?#])", value)

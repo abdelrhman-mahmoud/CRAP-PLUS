@@ -3,7 +3,7 @@ const localKey = 'crab-plus-site-data'
 
 function stripMockImages(data) {
   const mock = url => typeof url === 'string' && /\/images\/reference\/(feast|shrimp|claws|lemon|mussels|corn|offer|about)\.jpg(?:[?#].*)?$/.test(url)
-  return { ...data, items: (data.items || []).map(item => { const images = (item.images || []).filter(url => !mock(url)); const image = mock(item.image) ? '' : (images[0] || item.image || ''); return { ...item, image, images } }), offers: (data.offers || []).map(offer => ({ ...offer, image: mock(offer.image) ? '' : offer.image, image_url: mock(offer.image_url) ? '' : offer.image_url })) }
+  return { ...data, items: (data.items || []).map(item => { const images = (item.images || []).filter(url => !mock(url)); const image = mock(item.image) ? '' : (images[0] || item.image || ''); return { ...item, image, images } }), offers: (data.offers || []).map(offer => ({ ...offer, image: mock(offer.image) ? '' : offer.image, image_url: mock(offer.image_url) ? '' : offer.image_url, images: (offer.images || []).filter(url => !mock(url)) })) }
 }
 
 export async function getSiteData() {
