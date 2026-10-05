@@ -57,6 +57,7 @@ function PublicSite({ data, language, setLanguage }) {
   const shiftPhoto = amount => setActivePhoto(current=>(current+amount+detailPhotos.length)%detailPhotos.length)
   const selectedOffer = offers[activeOfferIndex] || offers[0] || null
   const selectOffer = index => setActiveOfferIndex(index)
+  const cycleOffers = direction => setActiveOfferIndex(index=>(index+direction+offers.length)%offers.length)
   const galleryOfferImages = Array.isArray(selectedOffer?.images)?selectedOffer.images:[]
   const orderSelectedOffer = () => { if(!selectedOffer){navigateTo('menu');return} const message=language==='en'?`I would like to order the offer: ${selectedOffer.title_en||selectedOffer.title}${selectedOffer.price!=null?` · ${selectedOffer.price} ${text.currency}`:''}`:`أرغب في طلب عرض: ${selectedOffer.title}${selectedOffer.price!=null?` · ${selectedOffer.price} ${text.currency}`:''}`;window.open(`${whatsapp}?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer') }
   const renderDish = (item,index,compact=false) => {
@@ -134,7 +135,7 @@ function PublicSite({ data, language, setLanguage }) {
       <div className="w rv">
         <h2 className="st"><i>≋</i>{text.offerTitle}<i>≋</i></h2>
         {offers.length>1&&<div className="offer-tabs" role="tablist" aria-label={text.offerTitle}>{offers.map((offer,index)=><button key={offer.id||index} type="button" role="tab" aria-selected={activeOfferIndex===index} className={activeOfferIndex===index?'active':''} onClick={()=>selectOffer(index)}><span>{language==='en'?(offer.title_en||offer.title):(offer.title||text.offerTitle)}</span>{offer.price!=null&&<small>{offer.price} {text.currency}</small>}</button>)}</div>}
-        <SeafoodOfferCard images={galleryOfferImages} offerImage={selectedOffer?.image||selectedOffer?.image_url||''} ctaLabel={language==='en'?'Order this offer':'اطلب العرض الآن'} onOrder={orderSelectedOffer}/>
+        <SeafoodOfferCard images={galleryOfferImages} offerImage={selectedOffer?.image||selectedOffer?.image_url||''} offerCount={offers.length} onOfferChange={cycleOffers} ctaLabel={language==='en'?'Order this offer':'اطلب العرض الآن'} onOrder={orderSelectedOffer}/>
       </div>
     </section>
     <section className="sec" id="menu">
