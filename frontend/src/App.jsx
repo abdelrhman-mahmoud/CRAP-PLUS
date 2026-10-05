@@ -19,7 +19,9 @@ function PublicSite({ data, language, setLanguage }) {
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
   const [detailItem, setDetailItem] = useState(null)
+  const [detailOffer, setDetailOffer] = useState(null)
   const [activePhoto, setActivePhoto] = useState(0)
+  const [activeOfferPhoto, setActiveOfferPhoto] = useState(0)
   const [activeOfferIndex, setActiveOfferIndex] = useState(0)
   const text = ui[language] || ui.ar
   const { categories = [], items = [], offers = [], settings = seedData.settings } = data
@@ -59,7 +61,10 @@ function PublicSite({ data, language, setLanguage }) {
   const selectOffer = index => setActiveOfferIndex(index)
   const cycleOffers = direction => setActiveOfferIndex(index=>(index+direction+offers.length)%offers.length)
   const galleryOfferImages = Array.isArray(selectedOffer?.images)?selectedOffer.images:[]
-  const orderSelectedOffer = () => { if(!selectedOffer){navigateTo('menu');return} const message=language==='en'?`I would like to order the offer: ${selectedOffer.title_en||selectedOffer.title}${selectedOffer.price!=null?` · ${selectedOffer.price} ${text.currency}`:''}`:`أرغب في طلب عرض: ${selectedOffer.title}${selectedOffer.price!=null?` · ${selectedOffer.price} ${text.currency}`:''}`;window.open(`${whatsapp}?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer') }
+  const orderOffer = offer => { if(!offer)return;const title=language==='en'?(offer.title_en||offer.title):(offer.title||offer.title_en);const message=language==='en'?`I would like to order the offer: ${title}${offer.price!=null?` · ${offer.price} ${text.currency}`:''}`:`أرغب في طلب عرض: ${title}${offer.price!=null?` · ${offer.price} ${text.currency}`:''}`;window.open(`${whatsapp}?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer') }
+  const orderSelectedOffer = () => { if(!selectedOffer){navigateTo('menu');return}orderOffer(selectedOffer) }
+  const showOfferDetails = () => { if(selectedOffer){setDetailOffer(selectedOffer);setActiveOfferPhoto(0)} }
+  const shiftOfferPhoto = amount => setActiveOfferPhoto(current=>(current+amount+detailOfferPhotos.length)%detailOfferPhotos.length)
   const renderDish = (item,index,compact=false) => {
     const description=itemDescription(item,language)
     return <article className="card" key={item.id}>
@@ -68,7 +73,10 @@ function PublicSite({ data, language, setLanguage }) {
     </article>
   }
   const detailPhotos=detailItem?dishImages(detailItem,items.indexOf(detailItem)):[]
+  const detailOfferPhotos=detailOffer?offerPhotos(detailOffer):[]
   const detailDescription=detailItem?(language==='en'?(detailItem.long_description_en||detailItem.long_description||itemDescription(detailItem,language)):(detailItem.long_description||detailItem.long_description_en||itemDescription(detailItem,language))):''
+  const detailOfferTitle=detailOffer?(language==='en'?(detailOffer.title_en||detailOffer.title):(detailOffer.title||detailOffer.title_en)):''
+  const detailOfferDescription=detailOffer?(language==='en'?(detailOffer.description_en||detailOffer.description):(detailOffer.description||detailOffer.description_en)):''
 
   useEffect(()=>{
     const updateHeader=()=>{
@@ -92,7 +100,7 @@ function PublicSite({ data, language, setLanguage }) {
     return ()=>observer.disconnect()
   },[])
   useEffect(()=>{
-    const closeOnEscape=event=>{if(event.key==='Escape'){setCartOpen(false);setDetailItem(null)}}
+    const closeOnEscape=event=>{if(event.key==='Escape'){setCartOpen(false);setDetailItem(null);setDetailOffer(null)}}
     window.addEventListener('keydown',closeOnEscape)
     return ()=>window.removeEventListener('keydown',closeOnEscape)
   },[])
@@ -135,7 +143,7 @@ function PublicSite({ data, language, setLanguage }) {
       <div className="w rv">
         <h2 className="st"><i>≋</i>{text.offerTitle}<i>≋</i></h2>
         {offers.length>1&&<div className="offer-tabs" role="tablist" aria-label={text.offerTitle}>{offers.map((offer,index)=><button key={offer.id||index} type="button" role="tab" aria-selected={activeOfferIndex===index} className={activeOfferIndex===index?'active':''} onClick={()=>selectOffer(index)}><span>{language==='en'?(offer.title_en||offer.title):(offer.title||text.offerTitle)}</span>{offer.price!=null&&<small>{offer.price} {text.currency}</small>}</button>)}</div>}
-        <SeafoodOfferCard images={galleryOfferImages} offerImage={selectedOffer?.image||selectedOffer?.image_url||''} offerCount={offers.length} onOfferChange={cycleOffers} ctaLabel={language==='en'?'Order this offer':'اطلب العرض الآن'} onOrder={orderSelectedOffer}/>
+        <SeafoodOfferCard images={galleryOfferImages} offerImage={selectedOffer?.image||selectedOffer?.image_url||''} offerCount={offers.length} onOfferChange={cycleOffers} onOpenDetails={showOfferDetails} ctaLabel={language==='en'?'Order this offer':'اطلب العرض الآن'} onOrder={orderSelectedOffer}/>
       </div>
     </section>
     <section className="sec" id="menu">
@@ -173,6 +181,19 @@ function PublicSite({ data, language, setLanguage }) {
           {detailPhotos.length>1&&<div className="product-thumbnails">{detailPhotos.map((src,index)=><button key={`${src}-${index}`} className={index===activePhoto?'active':''} type="button" onClick={()=>setActivePhoto(index)} aria-label={language==='en'?`Show photo ${index+1}`:`اعرض الصورة ${index+1}`}><img src={src} alt=""/></button>)}</div>}
         </div>
         <div className="product-lightbox-copy"><span className="product-category">{categoryName(orderedCategories.find(category=>category.name===detailItem.category)||{name:detailItem.category},language)}</span><h2>{itemName(detailItem,language)}</h2><div className="product-modal-meta"><b>{detailItem.price} {text.currency}</b>{detailItem.calories!=null&&<span>{detailItem.calories} {text.calories}</span>}</div><p>{detailDescription|| (language==='en'?'Freshly prepared with care.':'يُحضّر طازجًا بعناية.')}</p><button className="cta" type="button" onClick={()=>{addToCart(detailItem);setDetailItem(null)}}><ShoppingCart/>{language==='en'?'Add to cart':'أضف إلى السلة'}</button></div>
+      </article>
+    </div>}
+    {detailOffer&&<div className="product-lightbox" onMouseDown={event=>event.target===event.currentTarget&&setDetailOffer(null)}>
+      <article className="product-lightbox-card offer-lightbox-card" role="dialog" aria-modal="true" aria-label={detailOfferTitle} dir={language==='en'?'ltr':'rtl'}>
+        <button className="product-lightbox-close" type="button" onClick={()=>setDetailOffer(null)} aria-label={language==='en'?'Close':'إغلاق'}><X/></button>
+        <div className="product-gallery">
+          <div className="product-photo-stage">
+            {detailOfferPhotos.length?<img src={detailOfferPhotos[activeOfferPhoto]} alt={detailOfferTitle}/>:<div className="no-photo-label detail-no-photo"><ImageOff/><small>{language==='en'?'No offer photos added yet':'لم تُضف صور لهذا العرض بعد'}</small></div>}
+            {detailOfferPhotos.length>1&&<><button className="product-photo-nav previous" type="button" onClick={()=>shiftOfferPhoto(-1)} aria-label={language==='en'?'Previous photo':'الصورة السابقة'}>{language==='en'?<ChevronLeft/>:<ChevronRight/>}</button><button className="product-photo-nav next" type="button" onClick={()=>shiftOfferPhoto(1)} aria-label={language==='en'?'Next photo':'الصورة التالية'}>{language==='en'?<ChevronRight/>:<ChevronLeft/>}</button><span className="product-photo-count">{activeOfferPhoto+1} / {detailOfferPhotos.length}</span></>}
+          </div>
+          {detailOfferPhotos.length>1&&<div className="product-thumbnails">{detailOfferPhotos.map((src,index)=><button key={`${src}-${index}`} className={index===activeOfferPhoto?'active':''} type="button" onClick={()=>setActiveOfferPhoto(index)} aria-label={language==='en'?`Show photo ${index+1}`:`اعرض الصورة ${index+1}`}><img src={src} alt=""/></button>)}</div>}
+        </div>
+        <div className="product-lightbox-copy"><span className="product-category">{language==='en'?'Special offer':'عرض خاص'}</span><h2>{detailOfferTitle}</h2>{detailOffer.price!=null&&<div className="product-modal-meta"><b>{detailOffer.price} {text.currency}</b></div>}<p>{detailOfferDescription||(language==='en'?'Enjoy this special offer from Crab Plus.':'استمتع بهذا العرض المميز من كراب بلس.')}</p><button className="cta" type="button" onClick={()=>{orderOffer(detailOffer);setDetailOffer(null)}}><ShoppingCart/>{language==='en'?'Order this offer':'اطلب العرض الآن'}</button></div>
       </article>
     </div>}
     <div className={`ov ${cartOpen?'on':''}`} id="ov" onClick={()=>setCartOpen(false)} aria-hidden={!cartOpen}/>

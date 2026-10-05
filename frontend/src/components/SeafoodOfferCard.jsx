@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart, Image as ImageIcon, Expand } from "lucide-react";
 
 const T = "#0d8791", TD = "#09707a", OR = "#f4681d";
 
@@ -8,6 +8,7 @@ export default function SeafoodOfferCard({
   offerImage,
   offerCount = 1,
   onOfferChange = () => {},
+  onOpenDetails = () => {},
   ctaLabel = "اطلب العرض الآن",
   onOrder = () => {},
 }) {
@@ -35,7 +36,7 @@ export default function SeafoodOfferCard({
       <div className="sf-gallery">
         <div className="sf-main">
           {current ? (
-            <img src={current} alt="" />
+            <button type="button" className="sf-image-open" onClick={onOpenDetails} aria-label="عرض تفاصيل العرض"><img src={current} alt=""/><span><Expand/> عرض التفاصيل</span></button>
           ) : (
             <div className="sf-ph">
               <ImageIcon size={64} strokeWidth={2.2} />
@@ -67,17 +68,17 @@ export default function SeafoodOfferCard({
       </div>
 
       <div className={'sf-mobile-main' + (mobileShowsCover ? ' is-cover' : '')}>
-        {mobilePhoto ? <img src={mobilePhoto} alt="صورة العرض"/> : <div className="sf-mobile-placeholder"><ImageIcon/><span>صورة العرض</span></div>}
+        {mobilePhoto ? <button type="button" className="sf-image-open" onClick={onOpenDetails} aria-label="عرض تفاصيل العرض"><img src={mobilePhoto} alt="صورة العرض"/><span><Expand/> عرض التفاصيل</span></button> : <div className="sf-mobile-placeholder"><ImageIcon/><span>صورة العرض</span></div>}
         {offerCount > 1 && <>
-          <button className="sf-arrow sf-arrow-left" type="button" onClick={() => onOfferChange(1)} aria-label="العرض التالي"><ChevronLeft/></button>
-          <button className="sf-arrow sf-arrow-right" type="button" onClick={() => onOfferChange(-1)} aria-label="العرض السابق"><ChevronRight/></button>
+          <button className="sf-arrow sf-arrow-left" type="button" onClick={event => {event.stopPropagation();onOfferChange(1)}} aria-label="العرض التالي"><ChevronLeft/></button>
+          <button className="sf-arrow sf-arrow-right" type="button" onClick={event => {event.stopPropagation();onOfferChange(-1)}} aria-label="العرض السابق"><ChevronRight/></button>
         </>}
       </div>
 
       {/* ===== لوحة العرض (يمين) ===== */}
       <div className="sf-offer">
         {offerImage ? (
-          <img className="sf-offer-img" src={offerImage} alt="" />
+          <button type="button" className="sf-image-open sf-offer-img" onClick={onOpenDetails} aria-label="عرض تفاصيل العرض"><img src={offerImage} alt=""/><span><Expand/> عرض التفاصيل</span></button>
         ) : (
           <div className="sf-ph offer">
             <ImageIcon size={56} strokeWidth={2} />
@@ -104,6 +105,11 @@ const css = `
 .sf-gallery{position:absolute;left:0;top:0;bottom:0;width:100%}
 .sf-main{position:absolute;inset:0;z-index:2}
 .sf-main img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.sf-image-open{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;color:#fff;cursor:zoom-in;overflow:hidden}
+.sf-image-open img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.sf-image-open>span{position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:99px;background:#073e42bb;color:#fff;font-size:12px;opacity:0;transition:opacity .18s}
+.sf-image-open>span svg{width:15px;height:15px}
+.sf-image-open:hover>span,.sf-image-open:focus-visible>span{opacity:1}
 .sf-ph{position:absolute;left:0;right:0;top:0;height:76%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#8fcaca;font-weight:700;font-size:20px}
 .sf-ph.offer{height:100%;color:#9fbfc2}
 .sf-arrow{position:absolute;z-index:6;top:47%;transform:translateY(-50%);width:clamp(32px,4vw,46px);height:clamp(32px,4vw,46px);border-radius:50%;background:${T};color:#fff;display:grid;place-items:center;box-shadow:0 4px 10px rgba(0,0,0,.18);transition:transform .15s}
@@ -126,6 +132,7 @@ const css = `
    فبين الصورة واللوحة يبان خط موجي تركواز من خلفية الجاليري */
 .sf-offer{position:absolute;z-index:5;right:0;top:0;bottom:0;width:55%;background:linear-gradient(160deg,#1296a1 0%,${T} 45%,#0a6e77 100%)}
 .sf-offer-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.sf-offer-img img{object-fit:cover}
 
 .sf-cta{position:absolute;z-index:7;right:4%;bottom:clamp(16px,2.5vw,26px);width:30%;max-width:330px;min-height:clamp(40px,5vw,54px);padding:0 12px!important;border-radius:30px;background:${OR};color:#fff;font-size:clamp(13px,1.8vw,19px);font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 20px -6px rgba(244,104,29,.65);transition:transform .15s}
 .sf-cta svg{width:clamp(17px,2.2vw,23px);height:auto;flex:none}
@@ -143,8 +150,9 @@ const css = `
   .sf-arrow-left{left:14px;right:auto}
   .sf-arrow-right{right:14px}
   .sf-mobile-main{position:relative;display:block;order:-1;width:100%;height:clamp(250px,92vw,480px);overflow:hidden;background:#f7f3eb}
-  .sf-mobile-main img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
-  .sf-mobile-main.is-cover img{object-fit:contain}
+  .sf-mobile-main>.sf-image-open{display:block}
+  .sf-mobile-main .sf-image-open img{object-fit:cover}
+  .sf-mobile-main.is-cover .sf-image-open img{object-fit:contain}
   .sf-mobile-placeholder{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#91bec1;background:#eaf5f3}
   .sf-mobile-placeholder svg{width:54px;height:54px}
   .sf-offer{display:none}
