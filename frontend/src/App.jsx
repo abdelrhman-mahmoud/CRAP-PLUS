@@ -27,7 +27,7 @@ function PublicSite({ data, language, setLanguage }) {
   const { categories = [], items = [], offers = [], settings = seedData.settings } = data
   const orderedCategories = [...categories].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))
   const orderedItems = [...items].filter(item=>item.available!==false).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))
-  const activeCategory = orderedCategories.find(category=>category.name===selected) || null
+  const activeCategory = orderedCategories.find(category=>category.name===selected) || orderedCategories[0] || null
   const categoryItems = activeCategory ? orderedItems.filter(item=>item.category===activeCategory.name) : []
   const featureItems = orderedItems.filter(item=>item.featured).slice(0,4)
   const phoneDigits = String(settings.whatsapp || settings.phone || '').replace(/\D/g,'')
@@ -141,8 +141,8 @@ function PublicSite({ data, language, setLanguage }) {
     </section>
     <section className="sec" id="menu">
       <div className="w rv"><h2 className="st"><i>≋</i>{text.menuTitle} 🦀<i>≋</i></h2>
-        <div className="fl" id="fl">{orderedCategories.map(category=><button key={category.id} type="button" className={selected===category.name?'on':''} onClick={()=>setSelected(current=>current===category.name?null:category.name)}><span className="e">{featureIcons[category.id]||'🍽'}</span>{categoryName(category,language)}</button>)}</div>
-        {activeCategory ? (categoryItems.length?<div className="g4" id="grid">{categoryItems.map((item,index)=>renderDish(item,items.indexOf(item)))}</div>:<div className="em">{text.empty}</div>) : <div className="g4" id="grid">{orderedItems.map((item,index)=>renderDish(item,index))}</div>}
+        <div className="fl" id="fl">{orderedCategories.map(category=><button key={category.id} type="button" className={activeCategory?.name===category.name?'on':''} onClick={()=>setSelected(category.name)}><span className="e">{featureIcons[category.id]||'🍽'}</span>{categoryName(category,language)}</button>)}</div>
+        {activeCategory ? (categoryItems.length?<div className="g4" id="grid">{categoryItems.map((item,index)=>renderDish(item,items.indexOf(item)))}</div>:<div className="em">{text.empty}</div>) : <div className="em">{text.empty}</div>}
       </div>
     </section>
     <section className="sec offers-section" id="offers">

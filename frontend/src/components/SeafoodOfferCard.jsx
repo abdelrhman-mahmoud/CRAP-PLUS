@@ -104,9 +104,10 @@ const css = `
 /* الجاليري — 63% (اللوحة اليمين أخدت 7% زيادة منه) */
 .sf-gallery{position:absolute;left:0;top:0;bottom:0;width:100%}
 .sf-main{position:absolute;inset:0;z-index:2}
-.sf-main img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.sf-main img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#fbf9f4}
 .sf-image-open{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;color:#fff;cursor:zoom-in;overflow:hidden}
 .sf-image-open img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.sf-main .sf-image-open img{object-fit:contain;background:#fbf9f4}
 .sf-image-open>span{position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:99px;background:#073e42bb;color:#fff;font-size:12px;opacity:0;transition:opacity .18s}
 .sf-image-open>span svg{width:15px;height:15px}
 .sf-image-open:hover>span,.sf-image-open:focus-visible>span{opacity:1}
@@ -131,8 +132,8 @@ const css = `
 /* لوحة العرض — 49% من الكارت، حافتها الشمال نفس كيرف الصورة مزاح يمين 3.5%
    فبين الصورة واللوحة يبان خط موجي تركواز من خلفية الجاليري */
 .sf-offer{position:absolute;z-index:5;right:0;top:0;bottom:0;width:55%;background:linear-gradient(160deg,#1296a1 0%,${T} 45%,#0a6e77 100%)}
-.sf-offer-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
-.sf-offer-img img{object-fit:cover}
+.sf-offer-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#fbf9f4}
+.sf-offer-img img{object-fit:contain}
 
 .sf-cta{position:absolute;z-index:7;right:4%;bottom:clamp(16px,2.5vw,26px);width:30%;max-width:330px;min-height:clamp(40px,5vw,54px);padding:0 12px!important;border-radius:30px;background:${OR};color:#fff;font-size:clamp(13px,1.8vw,19px);font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 20px -6px rgba(244,104,29,.65);transition:transform .15s}
 .sf-cta svg{width:clamp(17px,2.2vw,23px);height:auto;flex:none}
@@ -151,8 +152,7 @@ const css = `
   .sf-arrow-right{right:14px}
   .sf-mobile-main{position:relative;display:block;order:-1;width:100%;height:clamp(250px,92vw,480px);overflow:hidden;background:#f7f3eb}
   .sf-mobile-main>.sf-image-open{display:block}
-  .sf-mobile-main .sf-image-open img{object-fit:cover}
-  .sf-mobile-main.is-cover .sf-image-open img{object-fit:contain}
+  .sf-mobile-main .sf-image-open img{object-fit:contain;background:#fbf9f4}
   .sf-mobile-placeholder{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#91bec1;background:#eaf5f3}
   .sf-mobile-placeholder svg{width:54px;height:54px}
   .sf-offer{display:none}
