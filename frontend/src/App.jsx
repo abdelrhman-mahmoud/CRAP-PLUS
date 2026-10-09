@@ -139,17 +139,17 @@ function PublicSite({ data, language, setLanguage }) {
     <section className="sec">
       <div className="w rv"><h2 className="st"><i>≋</i>{text.featured}<i>≋</i></h2><div className="g4" id="feat">{featureItems.map((item,index)=>renderDish(item,index,true))}</div></div>
     </section>
+    <section className="sec" id="menu">
+      <div className="w rv"><h2 className="st"><i>≋</i>{text.menuTitle} 🦀<i>≋</i></h2>
+        <div className="fl" id="fl">{orderedCategories.map(category=><button key={category.id} type="button" className={selected===category.name?'on':''} onClick={()=>setSelected(current=>current===category.name?null:category.name)}><span className="e">{featureIcons[category.id]||'🍽'}</span>{categoryName(category,language)}</button>)}</div>
+        {activeCategory ? (categoryItems.length?<div className="g4" id="grid">{categoryItems.map((item,index)=>renderDish(item,items.indexOf(item)))}</div>:<div className="em">{text.empty}</div>) : <div className="g4" id="grid">{orderedItems.map((item,index)=>renderDish(item,index))}</div>}
+      </div>
+    </section>
     <section className="sec offers-section" id="offers">
       <div className="w rv">
         <h2 className="st"><i>≋</i>{text.offerTitle}<i>≋</i></h2>
         {offers.length>1&&<div className="offer-tabs" role="tablist" aria-label={text.offerTitle}>{offers.map((offer,index)=><button key={offer.id||index} type="button" role="tab" aria-selected={activeOfferIndex===index} className={activeOfferIndex===index?'active':''} onClick={()=>selectOffer(index)}><span>{language==='en'?(offer.title_en||offer.title):(offer.title||text.offerTitle)}</span>{offer.price!=null&&<small>{offer.price} {text.currency}</small>}</button>)}</div>}
         <SeafoodOfferCard images={galleryOfferImages} offerImage={selectedOffer?.image||selectedOffer?.image_url||''} offerCount={offers.length} onOfferChange={cycleOffers} onOpenDetails={showOfferDetails} ctaLabel={language==='en'?'Order this offer':'اطلب العرض الآن'} onOrder={orderSelectedOffer}/>
-      </div>
-    </section>
-    <section className="sec" id="menu">
-      <div className="w rv"><h2 className="st"><i>≋</i>{text.menuTitle} 🦀<i>≋</i></h2>
-        <div className="fl" id="fl">{orderedCategories.map(category=><button key={category.id} type="button" className={selected===category.name?'on':''} onClick={()=>setSelected(current=>current===category.name?null:category.name)}><span className="e">{featureIcons[category.id]||'🍽'}</span>{categoryName(category,language)}</button>)}</div>
-        {activeCategory ? (categoryItems.length?<div className="g4" id="grid">{categoryItems.map((item,index)=>renderDish(item,items.indexOf(item)))}</div>:<div className="em">{text.empty}</div>) : <div className="em menu-hint">{text.chooseCategory}</div>}
       </div>
     </section>
     <section className="sec" id="about">
